@@ -8,7 +8,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.use(helmet());
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:4200',
+  });
   const port = process.env.PORT ? +process.env.PORT : 3000;
   await app.listen(port);
   console.log(`Server listening on port ${port}`);

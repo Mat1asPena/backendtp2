@@ -12,6 +12,8 @@ export class AuthController {
     @Post('register')
     @UseInterceptors(FileInterceptor('imagen', { storage: memoryStorage() }))
     async register(@Body() body: RegisterDto, @UploadedFile() file?: Express.Multer.File) {
+        console.log('📩 Datos recibidos en el backend:', body);
+        console.log('📸 Imagen recibida:', file?.originalname);
         return this.auth.register(body, file);
     }
 
