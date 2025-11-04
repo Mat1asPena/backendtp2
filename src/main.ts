@@ -9,7 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.use(helmet());
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: ['http://localhost:4200' , 'https://frontendtp2.vercel.app'],
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   const port = process.env.PORT ? +process.env.PORT : 3000;
