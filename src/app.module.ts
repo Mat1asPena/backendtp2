@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
-import { UsersService } from './users/users.service';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
+import { configureCloudinary } from './config/cloudinary.config';
 
 @Module({
-  imports: [AuthModule, UsersModule, PostsModule],
-  controllers: [AppController],
-  providers: [AppService, UsersService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot(process.env.MONGO_URI || ''),
+    AuthModule,
+    UsersModule,
+    PostsModule,
+  ],
 })
 export class AppModule {}
