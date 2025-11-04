@@ -9,11 +9,11 @@ export class UsersService {
 
     async create(user: Partial<User>) {
         try {
-        const doc = new this.model(user);   
-        return await doc.save();
+            const doc = new this.model(user);   
+            return await doc.save();
         } catch (err: any) {
-        if (err.code === 11000) throw new BadRequestException('Correo o nombre de usuario ya en uso');
-        throw err;
+            if (err.code === 11000) throw new BadRequestException('Correo o nombre de usuario ya en uso');
+            throw err;
         }
     }
 
