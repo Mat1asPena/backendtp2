@@ -11,6 +11,7 @@ async function bootstrap() {
   app.enableCors({
     origin: 'http://localhost:4200',
   });
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   const port = process.env.PORT ? +process.env.PORT : 3000;
   await app.listen(port);
   console.log(`Server listening on port ${port}`);

@@ -8,8 +8,7 @@ export class RegisterDto {
 
     @IsNotEmpty()
     @MinLength(8)
-    @Matches(/(?=.*[A-Z])(?=.*\d).+/, { message: 'La contraseña debe tener 1 mayúscula y 1 número' })
-    password: string;
+    @Matches(/(?=.*[A-Z])(?=.*\d).+/, { message: 'La contraseña debe tener 1 mayúscula y 1 número' }) password: string;
 
     @IsOptional() fechaNacimiento?: string;
     @IsOptional() descripcion?: string;
