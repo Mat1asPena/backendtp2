@@ -16,20 +16,43 @@ export class PostsService {
         filter = {},
         offset = 0,
         limit = 10,
-        sort: { [key: string]: 1 | -1 | 'asc' | 'desc' } = { createdAt: -1 }
-    ) {
+        sort: Record<string, 1 | -1> = { createdAt: -1 }
+        ) {
         return this.model.find(filter).sort(sort).skip(offset).limit(limit).exec();
     }
 
-    async incrementLike(id: string) {
-        return this.model.findByIdAndUpdate(id, { $inc: { likes: 1 } }, { new: true }).exec();
+    async likePost(id: string, userId: string) {
+        const post = await this.model.findById(id);
+        if (!post) return null;
+
+        const alreadyLiked = post.likes.some(like => like.toString() === userId);
+        if (alreadyLiked) return post; // no duplica likes
+
+        post.likes.push(userId as any);
+        return post.save();
     }
 
-    async decrementLike(id: string) {
-        return this.model.findByIdAndUpdate(id, { $inc: { likes: -1 } }, { new: true }).exec();
+    async unlikePost(id: string, userId: string) {
+        const post = await this.model.findById(id);
+        if (!post) return null;
+
+        const alreadyLiked = post.likes.some(like => like.toString() === userId);
+        if (!alreadyLiked) return post; // no hace nada si no lo había likeado
+
+        post.likes = post.likes.filter(like => like.toString() !== userId);
+        return post.save();
     }
 
-    async softDelete(id: string) {
-        return this.model.findByIdAndUpdate(id, { activo: false }, { new: true }).exec();
+    async softDelete(id: string, userId: string, userProfile: string) {
+        const post = await this.model.findById(id);
+        if (!post) return null;
+
+        // Solo autor o admin pueden borrar
+        if (post.author !== userId && userProfile !== 'administrador') {
+            throw new Error('No autorizado para eliminar esta publicación');
+        }
+
+        post.activo = false;
+        return post.save();
     }
 }
