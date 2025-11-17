@@ -1,19 +1,35 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express from 'express';
+import serverlessExpress from '@vendia/serverless-express';
+import helmet from 'helmet';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
-  app.use(helmet());
-  app.enableCors({
-    origin: ['http://localhost:4200' , 'https://frontendtp2.vercel.app'],
-  });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  const port = process.env.PORT ? +process.env.PORT : 3000;
-  await app.listen(port);
-  console.log(`Server listening on port ${port}`);
+let server: any;
+
+async function bootstrapServer() {
+  if (!server) {
+    const expressInstance = express();
+    const adapter = new ExpressAdapter(expressInstance);
+
+    const app = await NestFactory.create(AppModule, adapter);
+
+    app.setGlobalPrefix('api');
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+    app.use(helmet());
+    app.enableCors({
+      origin: ['http://localhost:4200', 'https://frontendtp2.vercel.app'],
+    });
+
+    await app.init();
+
+    server = serverlessExpress({ app: expressInstance });
+  }
+  return server;
 }
-bootstrap();
+
+export default async function handler(event, context) {
+  const s = await bootstrapServer();
+  return s(event, context);
+}
