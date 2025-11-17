@@ -1,35 +1,32 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express from 'express';
-import serverlessExpress from '@vendia/serverless-express';
 import helmet from 'helmet';
+import serverlessExpress from '@vendia/serverless-express';
 
-let server: any;
+let cachedHandler;
 
-async function bootstrapServer() {
-  if (!server) {
-    const expressInstance = express();
-    const adapter = new ExpressAdapter(expressInstance);
+async function bootstrapServerless() {
+  const app = await NestFactory.create(AppModule, { bodyParser: true });
 
-    const app = await NestFactory.create(AppModule, adapter);
+  app.setGlobalPrefix('api');
 
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    app.use(helmet());
-    app.enableCors({
-      origin: ['http://localhost:4200', 'https://frontendtp2.vercel.app'],
-    });
+  app.use(helmet());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
-    await app.init();
+  app.enableCors({
+    origin: ['http://localhost:4200', 'https://frontendtp2.vercel.app'],
+  });
 
-    server = serverlessExpress({ app: expressInstance });
+  await app.init();
+
+  const expressApp = app.getHttpAdapter().getInstance();
+  return serverlessExpress({ app: expressApp });
+}
+
+export const handler = async (event, context) => {
+  if (!cachedHandler) {
+    cachedHandler = await bootstrapServerless();
   }
-  return server;
-}
-
-export default async function handler(event, context) {
-  const s = await bootstrapServer();
-  return s(event, context);
-}
+  return cachedHandler(event, context);
+};
