@@ -1,58 +1,60 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
-import { Model } from 'mongoose';
+import { Model , SortOrder} from 'mongoose';
 
 @Injectable()
 export class PostsService {
-    constructor(@InjectModel(Post.name) private model: Model<PostDocument>) {}
+    constructor(
+        @InjectModel(Post.name) private postModel: Model<PostDocument>
+    ) {}
 
-    async create(post: Partial<Post>) {
-        const doc = new this.model(post);
-        return doc.save();
+    async getAll(orderBy = 'fecha', limit = 10) {
+        const sortOptions: { [key: string]: SortOrder } = 
+        orderBy === 'likes'
+        ? { likes: -1 }
+        : { createdAt: -1 };
+
+        return this.postModel
+        .find()
+        .sort(sortOptions)
+        .limit(limit)
+        .exec();
     }
 
-    async list(
-        filter = {},
-        offset = 0,
-        limit = 10,
-        sort: Record<string, 1 | -1> = { createdAt: -1 }
-        ) {
-        return this.model.find(filter).sort(sort).skip(offset).limit(limit).exec();
-    }
-
-    async likePost(id: string, userId: string) {
-        const post = await this.model.findById(id);
-        if (!post) return null;
-
-        const alreadyLiked = post.likes.some(like => like.toString() === userId);
-        if (alreadyLiked) return post; // no duplica likes
-
-        post.likes.push(userId as any);
+    async createPost(data: any) {
+        const post = new this.postModel(data);
         return post.save();
     }
 
-    async unlikePost(id: string, userId: string) {
-        const post = await this.model.findById(id);
+    async toggleLike(id: string, username: string) {
+        const post = await this.postModel.findById(id);
+
         if (!post) return null;
 
-        const alreadyLiked = post.likes.some(like => like.toString() === userId);
-        if (!alreadyLiked) return post; // no hace nada si no lo había likeado
+        const already = post.likedBy.includes(username);
 
-        post.likes = post.likes.filter(like => like.toString() !== userId);
-        return post.save();
-    }
-
-    async softDelete(id: string, userId: string, userProfile: string) {
-        const post = await this.model.findById(id);
-        if (!post) return null;
-
-        // Solo autor o admin pueden borrar
-        if (post.author !== userId && userProfile !== 'administrador') {
-            throw new Error('No autorizado para eliminar esta publicación');
+        if (already) {
+        post.likedBy = post.likedBy.filter(u => u !== username);
+        post.likes--;
+        } else {
+        post.likedBy.push(username);
+        post.likes++;
         }
 
-        post.activo = false;
         return post.save();
     }
+
+    async deletePost(id: string) {
+        return this.postModel.findByIdAndDelete(id);
+    }
+
+    async addComment(id: string, comment: any) {
+        return this.postModel.findByIdAndUpdate(
+        id,
+        { $push: { comentarios: comment } },
+        { new: true }
+        );
+    }
 }
+
