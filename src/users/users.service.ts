@@ -34,4 +34,19 @@ export class UsersService {
     async findByUsernameOrEmail(identifier: string) {
         return this.model.findOne({ $or: [{ correo: identifier }, { nombreUsuario: identifier }] }).exec();
     }
+
+    async update(id: string, updateData: any): Promise<User> {
+        const { password, rol, ...dataToUpdate } = updateData;
+        
+        const updatedUser = await this.model.findByIdAndUpdate(
+        id,
+        dataToUpdate,
+        { new: true }
+        ).exec();
+
+        if (!updatedUser) {
+        throw new NotFoundException('Usuario no encontrado');
+        }
+        return updatedUser;
+    }
 }
