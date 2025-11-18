@@ -8,6 +8,15 @@ let cachedHandler;
 
 async function bootstrapServerless() {
   const app = await NestFactory.create(AppModule, { bodyParser: true });
+  app.enableCors({
+    origin: [
+      'http://localhost:4200',
+      'https://frontendtp2.vercel.app'
+    ],
+    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
+    credentials: true,
+  });
 
   // Prefijo para todas las rutas
   app.setGlobalPrefix('api');
@@ -22,17 +31,6 @@ async function bootstrapServerless() {
       forbidNonWhitelisted: true,
     }),
   );
-
-  // 🚀 **CORS CORRECTO PARA ANGULAR Y VERCEL**
-  app.enableCors({
-    origin: [
-      'http://localhost:4200',
-      'https://frontendtp2.vercel.app/publicaciones'
-    ],
-    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
-    credentials: true,
-  });
 
   // Inicializar Nest
   await app.init();
