@@ -23,11 +23,12 @@ async function bootstrapServerless() {
     }),
   );
 
-  // El origen debe ser SOLO el dominio, sin carpetas ni rutas adicionales.
+  // Configuración de CORS
   app.enableCors({
     origin: [
-      'http://localhost:4200',
-      'https://frontendtp2.vercel.app'
+      'http://localhost:4200',                 // Local
+      'https://frontendtp2.vercel.app',        // Producción
+      /^https:\/\/frontendtp2.*\.vercel\.app$/ // <--- ESTA LÍNEA MÁGICA permite cualquier deploy preview del front
     ],
     methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',
