@@ -9,13 +9,24 @@ let cachedHandler;
 async function bootstrapServerless() {
   const app = await NestFactory.create(AppModule, { bodyParser: true });
 
-  // Prefijo para todas las rutas
+  // 1. CORS: Esto es lo CRÍTICO. 
+  // "origin: true" le dice al backend: "Acepta peticiones de quien sea".
+  app.enableCors({
+    origin: true, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true,
+  });
+
+  // 2. Prefijo Global
   app.setGlobalPrefix('api');
 
-  // Seguridad básica
-  app.use(helmet());
+  // 3. Seguridad (Ajustada para no bloquear APIs cruzadas)
+  app.use(helmet({
+    crossOriginResourcePolicy: false, 
+  }));
 
-  // Validación global
+  // 4. Validaciones
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -23,17 +34,6 @@ async function bootstrapServerless() {
     }),
   );
 
-  // 🛑 CONFIGURACIÓN DE EMERGENCIA PARA CORS 🛑
-  // "origin: true" acepta automáticamente cualquier origen que haga la petición.
-  // Esto solucionará tu problema con las URLs dinámicas de Vercel.
-  app.enableCors({
-    origin: true, 
-    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
-    credentials: true,
-  });
-
-  // Inicializar Nest
   await app.init();
 
   const expressApp = app.getHttpAdapter().getInstance();
