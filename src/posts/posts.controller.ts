@@ -9,10 +9,10 @@ export class PostsController {
     @UseGuards(JwtAuthGuard)
     @Post()
     create(@Req() req, @Body() body) {
-    const user = req.user;
-    return this.posts.createPost({
-        ...body,
-        author: user.username,
+        const user = req.user;
+        return this.posts.createPost({
+            ...body,
+            author: user.username,
     });
     }
 
@@ -22,24 +22,24 @@ export class PostsController {
     @Query('orderBy') orderBy = 'fecha',
     @Query('limit') limit = 10
     ) {
-    return this.posts.getAll(orderBy, limit);
+        return this.posts.getAll(orderBy, limit);
     }
 
     @UseGuards(JwtAuthGuard)
     @Patch(':id/like')
     toggleLike(@Param('id') id: string, @Req() req) {
-    return this.posts.toggleLike(id, req.user.username);
+        return this.posts.toggleLike(id, req.user.username);
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete(':id')
     delete(@Param('id') id: string) {
-    return this.posts.deletePost(id);
+        return this.posts.deletePost(id);
     }
 
     @UseGuards(JwtAuthGuard)
     @Post(':id/comentarios')
     addComment(@Param('id') id: string, @Body() body) {
-    return this.posts.addComment(id, body);
+        return this.posts.addComment(id, body);
     }
 }
