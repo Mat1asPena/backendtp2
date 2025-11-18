@@ -3,14 +3,14 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import serverlessExpress from '@vendia/serverless-express';
-import { Callback, Context, Handler } from 'aws-lambda';
+// NO importes aws-lambda aquí para evitar errores de compilación
 
-let server: Handler;
+let server: any;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 🚀 CORS NUCLEAR: Acepta todo para evitar errores
+  // CORS NUCLEAR: Acepta todo
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -20,9 +20,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  // Configuración de Helmet que permite cargar recursos externos (imágenes, scripts)
+  // Helmet permisivo
   app.use(helmet({ 
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: false, 
   }));
 
   app.useGlobalPipes(
@@ -37,12 +37,8 @@ async function bootstrap() {
   return serverlessExpress({ app: expressApp });
 }
 
-// Handler para Vercel
-export const handler: Handler = async (
-  event: any,
-  context: Context,
-  callback: Callback,
-) => {
+// Handler genérico
+export const handler = async (event: any, context: any, callback: any) => {
   server = server ?? (await bootstrap());
   return server(event, context, callback);
 };
