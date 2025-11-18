@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 // CAMBIO AQUÍ: Usamos bcryptjs en lugar de bcrypt
-import * as bcrypt from 'bcryptjs'; 
+import * as bcryptjs from 'bcryptjs'; 
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -42,8 +42,8 @@ export class AuthService {
         const existsUser = await this.usersService.findByUsername(dto.nombreUsuario);
         if (existsEmail || existsUser) throw new BadRequestException('Correo o nombre de usuario ya en uso');
 
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(dto.password, salt);
+        const salt = await bcryptjs.genSalt(10);
+        const hash = await bcryptjs.hash(dto.password, salt);
 
         let imagenUrl: string | undefined = undefined;
         if (file) {
@@ -80,7 +80,7 @@ export class AuthService {
         if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
         // bcryptjs usa la misma API, así que compare funciona igual
-        const match = await bcrypt.compare(dto.password, (user as any).password);
+        const match = await bcryptjs.compare(dto.password, (user as any).password);
         if (!match) throw new UnauthorizedException('Credenciales inválidas');
 
         if ((user as any).habilitado === false) throw new UnauthorizedException('Usuario deshabilitado');
