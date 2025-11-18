@@ -3,30 +3,26 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import serverlessExpress from '@vendia/serverless-express';
+import { Callback, Context, Handler } from 'aws-lambda';
 
-let cachedHandler;
+let server: Handler;
 
-async function bootstrapServerless() {
-  const app = await NestFactory.create(AppModule, { bodyParser: true });
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-  // 1. CORS: Esto es lo CRÍTICO. 
-  // "origin: true" le dice al backend: "Acepta peticiones de quien sea".
+  // CORS: Aceptar todo para evitar dolores de cabeza
   app.enableCors({
-    origin: true, 
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
     credentials: true,
   });
 
-  // 2. Prefijo Global
   app.setGlobalPrefix('api');
 
-  // 3. Seguridad (Ajustada para no bloquear APIs cruzadas)
-  app.use(helmet({
-    crossOriginResourcePolicy: false, 
-  }));
+  // Helmet: Desactivar bloqueo de recursos cruzados
+  app.use(helmet({ crossOriginResourcePolicy: false }));
 
-  // 4. Validaciones
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -35,14 +31,28 @@ async function bootstrapServerless() {
   );
 
   await app.init();
-
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
 }
 
-export const handler = async (event, context) => {
-  if (!cachedHandler) {
-    cachedHandler = await bootstrapServerless();
-  }
-  return cachedHandler(event, context);
+// Esta es la función que Vercel (a través de api/index.js) va a ejecutar
+export const handler: Handler = async (
+  event: any,
+  context: Context,
+  callback: Callback,
+) => {
+  server = server ?? (await bootstrap());
+  return server(event, context, callback);
 };
+
+// Esta parte es para que funcione en tu PC (npm run start)
+if (require.main === module) {
+  async function startLocal() {
+    const app = await NestFactory.create(AppModule);
+    app.enableCors({ origin: true, credentials: true });
+    app.setGlobalPrefix('api');
+    await app.listen(3000);
+    console.log(`Application is running on: ${await app.getUrl()}`);
+  }
+  startLocal();
+}
