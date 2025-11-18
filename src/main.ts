@@ -12,7 +12,7 @@ async function bootstrapServerless() {
   // Prefijo para todas las rutas
   app.setGlobalPrefix('api');
 
-  // Seguridad
+  // Seguridad básica
   app.use(helmet());
 
   // Validación global
@@ -23,23 +23,23 @@ async function bootstrapServerless() {
     }),
   );
 
-  // Configuración de CORS
+  // 🛑 CONFIGURACIÓN DE EMERGENCIA PARA CORS 🛑
+  // "origin: true" acepta automáticamente cualquier origen que haga la petición.
+  // Esto solucionará tu problema con las URLs dinámicas de Vercel.
   app.enableCors({
     origin: true, 
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
   });
 
   // Inicializar Nest
   await app.init();
 
-  // Adaptar Express a serverless
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
 }
 
-// Handler que Vercel usa como lambda
 export const handler = async (event, context) => {
   if (!cachedHandler) {
     cachedHandler = await bootstrapServerless();
