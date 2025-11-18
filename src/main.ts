@@ -42,3 +42,5 @@ export const handler = async (event: any, context: any, callback: any) => {
   server = server ?? (await bootstrap());
   return server(event, context, callback);
 };
+
+export default handler;
