@@ -25,13 +25,9 @@ async function bootstrapServerless() {
 
   // Configuración de CORS
   app.enableCors({
-    origin: [
-      'http://localhost:4200',                 // Local
-      'https://frontendtp2.vercel.app',        // Producción
-      /^https:\/\/frontendtp2.*\.vercel\.app$/ // <--- ESTA LÍNEA MÁGICA permite cualquier deploy preview del front
-    ],
-    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
+    origin: true, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
     credentials: true,
   });
 
