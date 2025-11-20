@@ -8,6 +8,11 @@ let server: any;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const apiPrefix = process.env.API_PREFIX ?? 'api'; // o '' en Vercel
+  if (apiPrefix) {
+    app.setGlobalPrefix(apiPrefix);
+  }
+
   // Habilitar CORS explícitamente para cualquier origen
   app.enableCors({
     origin: '*', // Permitir todo (luego lo restringes si quieres)
@@ -15,8 +20,6 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Accept, Authorization',
     credentials: true,
   });
-
-  app.setGlobalPrefix('api');
 
   // Comenta Helmet temporalmente para descartar bloqueos de seguridad extra
   // app.use(helmet(...));
