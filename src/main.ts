@@ -1,28 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import serverlessExpress from '@vendia/serverless-express';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express from 'express';
+import { json, urlencoded } from 'express';
 
-let server: any;
+const server = express();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Crear Nest sobre Express para que Vercel exponga correctamente la app
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
-  const apiPrefix = process.env.API_PREFIX ?? 'api'; // o '' en Vercel
+  const apiPrefix = process.env.API_PREFIX ?? 'api';
   if (apiPrefix) {
     app.setGlobalPrefix(apiPrefix);
   }
 
-  // Habilitar CORS explícitamente para cualquier origen
   app.enableCors({
-    origin: '*', // Permitir todo (luego lo restringes si quieres)
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
-    credentials: true,
   });
-
-  // Comenta Helmet temporalmente para descartar bloqueos de seguridad extra
-  // app.use(helmet(...));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -31,14 +29,13 @@ async function bootstrap() {
     }),
   );
 
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true }));
+
   await app.init();
-  const expressApp = app.getHttpAdapter().getInstance();
-  return serverlessExpress({ app: expressApp });
 }
 
-export const handler = async (event: any, context: any, callback: any) => {
-  server = server ?? (await bootstrap());
-  return server(event, context, callback);
-};
+// arrancar bootstrap (no listen) y exportar el server express
+bootstrap().catch((err) => console.error('Bootstrap error:', err));
 
-export default handler;
+export default server;
