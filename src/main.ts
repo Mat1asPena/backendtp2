@@ -6,6 +6,7 @@ import express from 'express';
 import { json, urlencoded } from 'express';
 
 const server = express();
+const PORT = process.env.PORT || 3000;
 
 async function bootstrap() {
   // Crear Nest sobre Express para que Vercel exponga correctamente la app
@@ -33,9 +34,16 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true }));
 
   await app.init();
+
+  // En desarrollo local, escuchar en el puerto
+  if (process.env.NODE_ENV !== 'production') {
+    server.listen(PORT, () => {
+      console.log(`Backend escuchando en http://localhost:${PORT}`);
+    });
+  }
 }
 
-// arrancar bootstrap (no listen) y exportar el server express
+// arrancar bootstrap
 bootstrap().catch((err) => console.error('Bootstrap error:', err));
 
 export default server;

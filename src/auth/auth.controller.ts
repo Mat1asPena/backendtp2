@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseInterceptors, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthService } from './auth.service';
@@ -19,6 +19,13 @@ export class AuthController {
 
     @Post('login')
     async login(@Body() body: LoginDto) {
+        console.log('🔑 Intento de login con:', body);
         return this.auth.login(body);
+    }
+
+    @Get('seed')
+    async seedTestUser() {
+        console.log('⚠️  Creando usuario de prueba...');
+        return this.auth.seedTestUser();
     }
 }

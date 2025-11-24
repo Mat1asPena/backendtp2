@@ -96,4 +96,44 @@ export class AuthService {
 
         return { statusCode: 200, token, user: userObj };
     }
+
+    async seedTestUser() {
+        try {
+            // Verificar si el usuario ya existe
+            const existing = await this.usersService.findByUsernameOrEmail('testuser');
+            if (existing) {
+                return { message: 'Usuario de prueba ya existe', user: existing };
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash('password123', salt);
+
+            const testUser: any = {
+                nombre: 'Test',
+                apellido: 'User',
+                correo: 'testuser@test.com',
+                nombreUsuario: 'testuser',
+                password: hash,
+                fechaNacimiento: '2000-01-01',
+                descripcion: 'Usuario de prueba',
+                perfil: 'usuario' as const,
+            };
+
+            const created = await this.usersService.create(testUser);
+            const createdObj: any = created.toObject ? created.toObject() : created;
+            createdObj.password = '';
+
+            return { 
+                message: '✅ Usuario de prueba creado exitosamente',
+                user: createdObj,
+                credentials: {
+                    usernameOrEmail: 'testuser',
+                    password: 'password123'
+                }
+            };
+        } catch (err) {
+            console.error('Error al crear usuario de prueba:', err);
+            throw err;
+        }
+    }
 }
