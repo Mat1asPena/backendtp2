@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards, Patch, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express'; // Importar FileInterceptor
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -8,21 +9,23 @@ export class PostsController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    create(@Req() req, @Body() body) {
+    @UseInterceptors(FileInterceptor('imagen')) // Interceptar el campo 'imagen'
+    create(@Req() req, @Body() body, @UploadedFile() file?: Express.Multer.File) {
         const user = req.user;
         return this.posts.createPost({
             ...body,
             author: user.username,
-    });
+        }, file); // Pasamos el archivo al servicio
     }
 
     @UseGuards(JwtAuthGuard)
     @Get()
     getAll(
-    @Query('orderBy') orderBy = 'fecha',
-    @Query('limit') limit = 10
+        @Query('orderBy') orderBy = 'fecha',
+        @Query('limit') limit = 5,
+        @Query('page') page = 1 // Recibimos la página
     ) {
-        return this.posts.getAll(orderBy, limit);
+        return this.posts.getAll(orderBy, Number(limit), Number(page));
     }
 
     @UseGuards(JwtAuthGuard)
