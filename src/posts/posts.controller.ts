@@ -57,4 +57,13 @@ export class PostsController {
     ) {
         return this.posts.updateComment(postId, commentId, req.user.username, texto);
     }
+
+    @Get(':id/comentarios')
+    async getComments(
+        @Param('id') id: string,
+        @Query('page') page = 1,
+        @Query('limit') limit = 5
+    ) {
+        return this.posts.getComments(id, Number(page), Number(limit));
+    }
 }

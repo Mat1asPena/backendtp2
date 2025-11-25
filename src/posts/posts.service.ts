@@ -119,5 +119,24 @@ export class PostsService {
             { new: true }
         ).exec();
     }
+
+    async getComments(postId: string, page: number, limit: number) {
+        const post = await this.postModel.findById(postId, {
+            comentarios: { $slice: [-(page * limit), limit] }
+        }).exec();
+        
+        if (!post) throw new NotFoundException('Post not found');
+
+        const fullPost = await this.postModel.findById(postId).select('comentarios').exec();
+        if (!fullPost) throw new NotFoundException('Post not found');
+
+        const sortedComments = fullPost.comentarios.sort((a: any, b: any) => 
+            new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+        );
+        const skip = (page - 1) * limit;
+        const paginatedComments = sortedComments.slice(skip, skip + limit);
+
+        return paginatedComments;
+    }
 }
 
