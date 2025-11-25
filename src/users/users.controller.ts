@@ -1,6 +1,7 @@
-import { Controller, Get, Put, Body, UseGuards, Request, Param, Post, Delete, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Request, Param, Post, Delete, UnauthorizedException, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -15,8 +16,13 @@ export class UsersController {
     // Endpoint para Editar Perfil
     @UseGuards(JwtAuthGuard)
     @Put(':id')
-    async updateUser(@Param('id') id: string, @Body() updateData: any) {
-        return this.usersService.update(id, updateData);
+    @UseInterceptors(FileInterceptor('imagen')) // Interceptar archivo 'imagen'
+    async updateUser(
+        @Param('id') id: string, 
+        @Body() updateData: any,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        return this.usersService.update(id, updateData, file);
     }
 
     // --- SPRINT 4: SOLO ADMIN ---

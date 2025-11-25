@@ -31,17 +31,23 @@ export class PostsService {
         });
     }
 
-    async getAll(orderBy = 'fecha', limit = 5, page = 1) {
+    async getAll(orderBy = 'fecha', limit = 5, page = 1, author?: string) {
         const sortOptions: { [key: string]: SortOrder } = 
             orderBy === 'likes' ? { likes: -1 } : { createdAt: -1 };
         
-        const skip = (page - 1) * limit; // Calcular cuántos saltar
+        const skip = (page - 1) * limit;
+
+        // Creamos el objeto de filtro
+        const filter: any = {};
+        if (author) {
+            filter.author = author; // Si recibimos autor, filtramos por él
+        }
 
         return this.postModel
-            .find()
+            .find(filter) // Pasamos el filtro a Mongoose
             .sort(sortOptions)
-            .skip(skip)   // Saltar los anteriores
-            .limit(limit) // Limitar resultados
+            .skip(skip)
+            .limit(limit)
             .exec();
     }
 

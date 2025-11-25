@@ -23,9 +23,10 @@ export class PostsController {
     getAll(
         @Query('orderBy') orderBy = 'fecha',
         @Query('limit') limit = 5,
-        @Query('page') page = 1 // Recibimos la página
+        @Query('page') page = 1, // Recibimos la página
+        @Query('author') author? : string // Parametro opcional.
     ) {
-        return this.posts.getAll(orderBy, Number(limit), Number(page));
+        return this.posts.getAll(orderBy, Number(limit), Number(page), author);
     }
 
     @UseGuards(JwtAuthGuard)

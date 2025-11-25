@@ -3,10 +3,23 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
+import { v2 as cloudinary } from 'cloudinary';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectModel(User.name) private model: Model<UserDocument>) {}
+    constructor(
+        @InjectModel(User.name) private model: Model<UserDocument>,
+        private config: ConfigService // Inyectamos ConfigService
+    ) {
+        // Configurar Cloudinary
+        cloudinary.config({
+            cloud_name: this.config.get('CLOUDINARY_CLOUD_NAME'),
+            api_key: this.config.get('CLOUDINARY_API_KEY'),
+            api_secret: this.config.get('CLOUDINARY_API_SECRET'),
+            secure: true,
+        });
+    }
 
     async create(user: Partial<User>) {
         try {
@@ -49,17 +62,34 @@ export class UsersService {
         return this.model.findByIdAndUpdate(id, { habilitado }, { new: true }).exec();
     }
 
-    async update(id: string, updateData: any): Promise<User> {
+    private async uploadToCloudinary(file: Express.Multer.File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const upload_stream = cloudinary.uploader.upload_stream({ folder: 'ecored_avatars' }, (error, result) => {
+                if (error) return reject(error);
+                resolve((result as any).secure_url);
+            });
+            upload_stream.end(file.buffer);
+        });
+    }
+
+    async update(id: string, updateData: any, file?: Express.Multer.File): Promise<User> {
+        // Evitar actualizar datos sensibles directamente aquí si no se desea
         const { password, rol, ...dataToUpdate } = updateData;
+
+        // Si hay archivo, subirlo y actualizar la URL
+        if (file) {
+            const url = await this.uploadToCloudinary(file);
+            dataToUpdate.imagenUrl = url;
+        }
         
         const updatedUser = await this.model.findByIdAndUpdate(
-        id,
-        dataToUpdate,
-        { new: true }
+            id,
+            dataToUpdate,
+            { new: true }
         ).exec();
 
         if (!updatedUser) {
-        throw new NotFoundException('Usuario no encontrado');
+            throw new NotFoundException('Usuario no encontrado');
         }
         return updatedUser;
     }
