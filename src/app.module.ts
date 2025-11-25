@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
 import { configureCloudinary } from './config/cloudinary.config';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { configureCloudinary } from './config/cloudinary.config';
     AuthModule,
     UsersModule,
     PostsModule,
+    StatsModule,
   ],
 })
 export class AppModule {}
