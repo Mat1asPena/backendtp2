@@ -66,4 +66,10 @@ export class PostsController {
     ) {
         return this.posts.getComments(id, Number(page), Number(limit));
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    async getOne(@Param('id') id: string) {
+        return this.posts.getOne(id);
+    }
 }

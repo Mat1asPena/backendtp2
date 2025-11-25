@@ -77,6 +77,46 @@ export class PostsService {
         ]).exec();
     }
 
+    async getOne(id: string) {
+        if (!Types.ObjectId.isValid(id)) {
+            throw new NotFoundException('ID de publicación inválido');
+        }
+
+        const result = await this.postModel.aggregate([
+            { $match: { _id: new Types.ObjectId(id) } }, // 1. Filtramos por ID
+            {
+                $lookup: { // Traemos datos del autor
+                    from: 'users',
+                    localField: 'author',
+                    foreignField: 'nombreUsuario',
+                    as: 'usuario_data'
+                }
+            },
+            {
+                $unwind: { // Aplanamos el array de usuario
+                    path: '$usuario_data',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: { // Ponemos la foto bonita
+                    authorAvatar: '$usuario_data.imagenUrl'
+                }
+            },
+            {
+                $project: { // Limpiamos basura
+                    usuario_data: 0
+                }
+            }
+        ]).exec();
+
+        if (!result || result.length === 0) {
+            throw new NotFoundException('Publicación no encontrada');
+        }
+
+        return result[0]; // Devolvemos el objeto, no el array
+    }
+
     async createPost(data: any, file?: Express.Multer.File) {
         let imagenUrl = '';
         
