@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
-import { Model, SortOrder, Types } from 'mongoose';
+import { Model, Types, SortOrder } from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary'; // Importar Cloudinary
 import { ConfigService } from '@nestjs/config'; // Importar ConfigService
 
@@ -32,23 +32,49 @@ export class PostsService {
     }
 
     async getAll(orderBy = 'fecha', limit = 5, page = 1, author?: string) {
-        const sortOptions: { [key: string]: SortOrder } = 
+        const sortOptions: Record<string, 1 | -1> = 
             orderBy === 'likes' ? { likes: -1 } : { createdAt: -1 };
         
         const skip = (page - 1) * limit;
+        
+        // Filtro inicial
+        const matchStage: any = {};
+        if (author) matchStage.author = author;
 
-        // Creamos el objeto de filtro
-        const filter: any = {};
-        if (author) {
-            filter.author = author; // Si recibimos autor, filtramos por él
-        }
-
-        return this.postModel
-            .find(filter) // Pasamos el filtro a Mongoose
-            .sort(sortOptions)
-            .skip(skip)
-            .limit(limit)
-            .exec();
+        return this.postModel.aggregate([
+            { $match: matchStage },
+            { $sort: sortOptions },
+            { $skip: skip },
+            { $limit: limit },
+            // 1. Buscamos al usuario que coincida con el 'author' del post
+            {
+                $lookup: {
+                    from: 'users',                // Nombre de la colección de usuarios en Mongo
+                    localField: 'author',         // Campo en el Post (nombre de usuario)
+                    foreignField: 'nombreUsuario',// Campo en el User
+                    as: 'usuario_data'            // Donde guardamos el resultado temporal
+                }
+            },
+            // 2. Desempaquetamos el array (porque lookup devuelve un array)
+            {
+                $unwind: {
+                    path: '$usuario_data',
+                    preserveNullAndEmptyArrays: true // Para que no explote si el usuario fue borrado
+                }
+            },
+            // 3. Agregamos el campo 'authorAvatar' al resultado final
+            {
+                $addFields: {
+                    authorAvatar: '$usuario_data.imagenUrl'
+                }
+            },
+            // 4. Limpiamos lo que no sirve (quitamos el objeto usuario_data pesado)
+            {
+                $project: {
+                    usuario_data: 0
+                }
+            }
+        ]).exec();
     }
 
     async createPost(data: any, file?: Express.Multer.File) {
