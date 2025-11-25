@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
 import { Model, SortOrder } from 'mongoose';
@@ -90,10 +90,36 @@ export class PostsService {
 
     async addComment(id: string, comment: any) {
         return this.postModel.findByIdAndUpdate(
-        id,
-        { $push: { comentarios: comment } },
-        { new: true }
+            id,
+            { $push: { comentarios: comment } },
+            { new: true }
         );
+    }
+
+    async updateComment(postId: string, commentId: string, username: string, nuevoTexto: string) {
+        // 1. Buscar el post para validar autoría del comentario
+        const post = await this.postModel.findById(postId);
+        if (!post) throw new NotFoundException('Publicación no encontrada');
+
+        const comentario = post.comentarios.find(c => c._id.toString() === commentId);
+        if (!comentario) throw new NotFoundException('Comentario no encontrado');
+
+        // 2. Validar que quien edita sea el autor del comentario
+        if (comentario.autor !== username) {
+            throw new UnauthorizedException('No tienes permiso para editar este comentario');
+        }
+
+        // 3. Actualizar en base de datos
+        return this.postModel.findOneAndUpdate(
+            { _id: postId, "comentarios._id": commentId }, // Filtro: post ID y comentario ID
+            { 
+                $set: { 
+                    "comentarios.$.texto": nuevoTexto, // $ es el índice del comentario encontrado
+                    "comentarios.$.modificado": true   // Marcamos como modificado
+                }
+            },
+            { new: true }
+        ).exec();
     }
 }
 

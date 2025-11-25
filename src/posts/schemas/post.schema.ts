@@ -1,5 +1,24 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+
+@Schema()
+export class Comentario {
+    @Prop({ type: Types.ObjectId, default: () => new Types.ObjectId() })
+    _id: Types.ObjectId; // ID único para cada comentario
+
+    @Prop({ required: true })
+    autor: string;
+
+    @Prop({ required: true })
+    texto: string;
+
+    @Prop({ default: Date.now })
+    fecha: Date;
+
+    @Prop({ default: false }) // Nuevo campo para el requerimiento
+    modificado: boolean;
+}
+const ComentarioSchema = SchemaFactory.createForClass(Comentario);
 
 export type PostDocument = HydratedDocument<Post>;
 
@@ -23,9 +42,9 @@ export class Post {
     @Prop({ type: [String], default: [] })
     likedBy: string[];
 
-    @Prop({ type: Array, default: [] })
-    comentarios: any[];
+    // Usamos el esquema de comentarios aquí
+    @Prop({ type: [ComentarioSchema], default: [] })
+    comentarios: Comentario[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
-

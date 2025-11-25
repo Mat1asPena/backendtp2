@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards, Patch, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards, Patch, UseInterceptors, UploadedFile, Put } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express'; // Importar FileInterceptor
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -45,5 +45,16 @@ export class PostsController {
     @Post(':id/comentarios')
     addComment(@Param('id') id: string, @Body() body) {
         return this.posts.addComment(id, body);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Put(':id/comentarios/:commentId')
+    updateComment(
+        @Param('id') postId: string,
+        @Param('commentId') commentId: string,
+        @Body('texto') texto: string, // Esperamos { texto: "nuevo texto" }
+        @Req() req
+    ) {
+        return this.posts.updateComment(postId, commentId, req.user.username, texto);
     }
 }
