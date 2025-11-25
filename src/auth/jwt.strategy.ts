@@ -14,10 +14,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        // lo que se devuelve acá termina dentro de req.user
         return {
         id: payload.sub,
-        username: payload.nombreUsuario, // El token guarda 'nombreUsuario', no 'username'
+        username: payload.nombreUsuario,
         profile: payload.perfil,
         };
     }
