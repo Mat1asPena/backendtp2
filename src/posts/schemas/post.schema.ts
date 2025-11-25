@@ -15,7 +15,7 @@ export class Comentario {
     @Prop({ default: Date.now })
     fecha: Date;
 
-    @Prop({ default: false }) // Nuevo campo para el requerimiento
+    @Prop({ default: false }) // Campo para el requerimiento
     modificado: boolean;
 }
 const ComentarioSchema = SchemaFactory.createForClass(Comentario);

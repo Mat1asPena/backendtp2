@@ -173,7 +173,6 @@ export class PostsService {
             throw new UnauthorizedException('No tienes permiso para editar este comentario');
         }
 
-        // 2. Usar new Types.ObjectId(commentId) para asegurar el match
         return this.postModel.findOneAndUpdate(
             { _id: postId, "comentarios._id": new Types.ObjectId(commentId) }, 
             { 

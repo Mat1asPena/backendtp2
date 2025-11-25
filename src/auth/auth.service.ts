@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-// CAMBIO AQUÍ: Usamos bcryptjs en lugar de bcrypt
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -79,7 +78,6 @@ export class AuthService {
         const user = await this.usersService.findByUsernameOrEmail(dto.usernameOrEmail);
         if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
-        // bcryptjs usa la misma API, así que compare funciona igual
         const match = await bcrypt.compare(dto.password, (user as any).password);
         if (!match) throw new UnauthorizedException('Credenciales inválidas');
 
@@ -124,7 +122,7 @@ export class AuthService {
             createdObj.password = '';
 
             return { 
-                message: '✅ Usuario de prueba creado exitosamente',
+                message: 'Usuario de prueba creado exitosamente',
                 user: createdObj,
                 credentials: {
                     usernameOrEmail: 'testuser',
