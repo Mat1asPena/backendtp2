@@ -1,9 +1,10 @@
-import { Body, Controller, Post, UploadedFile, UseInterceptors, Get } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseInterceptors, Get, UseGuards, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,5 +28,20 @@ export class AuthController {
     async seedTestUser() {
         console.log('⚠️  Creando usuario de prueba...');
         return this.auth.seedTestUser();
+    }
+
+    @Post('refresh')
+    @UseGuards(JwtAuthGuard)
+    refresh(@Req() req) {
+        // El guard ya validó el token actual, generamos uno nuevo
+        const user = req.user;
+        return this.auth.login({ usernameOrEmail: user.nombreUsuario, password: '' }); // Truco: flag 'isRefresh'
+    }
+
+    @Post('authorize')
+    @UseGuards(JwtAuthGuard)
+    authorize(@Req() req) {
+        // Si pasa el Guard, el token es válido
+        return { valid: true, user: req.user };
     }
 }

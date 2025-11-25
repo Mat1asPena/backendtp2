@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -9,6 +10,11 @@ export class UsersService {
 
     async create(user: Partial<User>) {
         try {
+            // Si viene password, hashearla (útil para el admin que crea usuarios)
+            if (user.password) {
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(user.password, salt);
+            }
             const doc = new this.model(user);   
             return await doc.save();
         } catch (err: any) {
@@ -33,6 +39,14 @@ export class UsersService {
 
     async findByUsernameOrEmail(identifier: string) {
         return this.model.findOne({ $or: [{ correo: identifier }, { nombreUsuario: identifier }] }).exec();
+    }
+
+    async findAll() {
+        return this.model.find().select('-password').exec(); // Listar todos sin password
+    }
+
+    async toggleStatus(id: string, habilitado: boolean) {
+        return this.model.findByIdAndUpdate(id, { habilitado }, { new: true }).exec();
     }
 
     async update(id: string, updateData: any): Promise<User> {
