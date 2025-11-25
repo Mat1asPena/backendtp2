@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
-import { Model, SortOrder } from 'mongoose';
+import { Model, SortOrder, Types } from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary'; // Importar Cloudinary
 import { ConfigService } from '@nestjs/config'; // Importar ConfigService
 
@@ -97,26 +97,24 @@ export class PostsService {
     }
 
     async updateComment(postId: string, commentId: string, username: string, nuevoTexto: string) {
-        // 1. Buscar el post para validar autoría del comentario
         const post = await this.postModel.findById(postId);
         if (!post) throw new NotFoundException('Publicación no encontrada');
 
-        const comentario = post.comentarios.find(c => c._id.toString() === commentId);
+        const comentario = post.comentarios.find((c: any) => c._id.toString() === commentId);
         if (!comentario) throw new NotFoundException('Comentario no encontrado');
 
-        // 2. Validar que quien edita sea el autor del comentario
         if (comentario.autor !== username) {
             throw new UnauthorizedException('No tienes permiso para editar este comentario');
         }
 
-        // 3. Actualizar en base de datos
+        // 2. Usar new Types.ObjectId(commentId) para asegurar el match
         return this.postModel.findOneAndUpdate(
-            { _id: postId, "comentarios._id": commentId }, // Filtro: post ID y comentario ID
+            { _id: postId, "comentarios._id": new Types.ObjectId(commentId) }, 
             { 
                 $set: { 
-                    "comentarios.$.texto": nuevoTexto, // $ es el índice del comentario encontrado
-                    "comentarios.$.modificado": true   // Marcamos como modificado
-                }
+                    "comentarios.$.texto": nuevoTexto, 
+                    "comentarios.$.modificado": true 
+                } 
             },
             { new: true }
         ).exec();
