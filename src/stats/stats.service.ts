@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from '../posts/schemas/post.schema';
@@ -11,13 +11,7 @@ export class StatsService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
     ) {}
 
-    // Total de Usuarios Registrados
-    async getTotalUsers() {
-        const count = await this.userModel.countDocuments().exec();
-        return { totalUsers: count };
-    }
-
-    // Top 10 de Publicaciones por Autor
+    // Métrica 1: Posts por Usuario (Barra)
     async getPostsPerUser() {
         return this.postModel.aggregate([
         {
@@ -31,17 +25,64 @@ export class StatsService {
         ]).exec();
     }
 
-    // Likes recibidos por día (Data para gráfico)
-    async getLikesByDate() {
+    // Métrica 2: Likes por Rango de Tiempo (Línea)
+    async getLikesByDate(startDate: string, endDate: string) {
+        // Convertimos las strings a objetos Date para el filtro
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
         return this.postModel.aggregate([
-        // Agrupamos por la fecha de creación y sumamos los likes de ese día
+        // Filtramos por fecha de creación del post
+        { $match: { createdAt: { $gte: start, $lte: end } } },
         {
             $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
             totalLikes: { $sum: '$likes' },
             },
         },
-        { $sort: { _id: 1 } }, // Ordenar por fecha ascendente
+        { $sort: { _id: 1 } },
+        ]).exec();
+    }
+
+    // Métrica 3: Comentarios por Rango de Tiempo (Barra)
+    async getCommentsByDate(startDate: string, endDate: string) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        return this.postModel.aggregate([
+        // Desempaquetamos los comentarios para poder filtrarlos individualmente
+        { $unwind: '$comentarios' },
+        // Filtramos por fecha de creación del comentario
+        { 
+            $match: { 'comentarios.fecha': { $gte: start, $lte: end } } 
+        },
+        { 
+            $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$comentarios.fecha' } },
+            totalComments: { $sum: 1 }
+            }
+        },
+        { $sort: { _id: 1 } }
+        ]).exec();
+    }
+
+    // Métrica 4: Comentarios por Publicación (Torta)
+    async getCommentsPerPost(startDate: string, endDate: string) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        return this.postModel.aggregate([
+            // Filtramos posts creados en el rango
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $unwind: '$comentarios' },
+            // Agrupamos por el ID del post y contamos los comentarios
+            { $group: {
+                _id: '$_id',
+                titulo: { $first: '$titulo' },
+                totalComments: { $sum: 1 }
+            }},
+            { $sort: { totalComments: -1 } },
+            { $limit: 10 }
         ]).exec();
     }
 }
