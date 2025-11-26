@@ -85,4 +85,10 @@ export class StatsService {
             { $limit: 10 }
         ]).exec();
     }
+
+    async getTotalUsers() {
+    // Cuenta todos los documentos en la colección de usuarios
+    const count = await this.userModel.countDocuments().exec();
+    return { totalUsers: count };
+    }
 }

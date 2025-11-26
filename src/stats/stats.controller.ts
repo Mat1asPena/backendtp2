@@ -8,7 +8,7 @@ export class StatsController {
     constructor(private readonly statsService: StatsService) {}
 
     private checkAdmin(user: any) {
-        if (user.rol !== 'administrador') {
+        if (user.perfil !== 'administrador') {
         throw new UnauthorizedException('Acceso restringido: Se requiere rol de administrador');
         }
     }
@@ -65,5 +65,11 @@ export class StatsController {
         this.checkAdmin(req.user);
         const { startDate: defStart, endDate: defEnd } = this.getDefaultDates(90); // 90 días por defecto
         return this.statsService.getCommentsPerPost(startDate || defStart, endDate || defEnd);
+    }
+
+    @Get('total-users')
+    async getTotalUsers(@Req() req) {
+        this.checkAdmin(req.user);
+        return this.statsService.getTotalUsers();
     }
 }
