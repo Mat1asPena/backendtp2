@@ -36,9 +36,15 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    async createUser(@Request() req, @Body() body) {
+    @UseInterceptors(FileInterceptor('imagen')) 
+    async createUser(
+        @Request() req, 
+        @Body() userData: any,
+        @UploadedFile() file?: Express.Multer.File 
+    ) {
         this.checkAdmin(req.user);
-        return this.usersService.create(body);
+        // Llamamos a un nuevo método en el servicio para manejar la creación con archivo
+        return this.usersService.createAdminUser(userData, file); 
     }
 
     @UseGuards(JwtAuthGuard)

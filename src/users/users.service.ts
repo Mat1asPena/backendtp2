@@ -93,4 +93,20 @@ export class UsersService {
         }
         return updatedUser;
     }
+
+    async createAdminUser(userData: Partial<User>, file?: Express.Multer.File) {
+        let imagenUrl: string | undefined = undefined;
+        
+        if (file) {
+            imagenUrl = await this.uploadToCloudinary(file);
+        }
+        
+        const userObj: Partial<User> = { ...userData, imagenUrl };
+        
+        if (!userObj.password) {
+            throw new BadRequestException('La contraseña es obligatoria.');
+        }
+
+        return this.create(userObj);
+    }
 }
