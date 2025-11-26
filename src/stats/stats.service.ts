@@ -11,36 +11,39 @@ export class StatsService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
     ) {}
 
-    // Métrica 1: Posts por Usuario (Barra)
-    async getPostsPerUser() {
+    // Métrica 1: Posts por Usuario (Barra) - AHORA FILTRA POR FECHA
+    async getPostsPerUser(startDate: string, endDate: string) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
         return this.postModel.aggregate([
-        {
-            $group: {
-            _id: '$author',
-            totalPosts: { $sum: 1 },
+            // Filtro de tiempo por fecha de creación del post
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+                $group: {
+                    _id: '$author',
+                    totalPosts: { $sum: 1 },
+                },
             },
-        },
-        { $sort: { totalPosts: -1 } },
-        { $limit: 10 },
+            { $sort: { totalPosts: -1 } },
+            { $limit: 10 },
         ]).exec();
     }
 
     // Métrica 2: Likes por Rango de Tiempo (Línea)
     async getLikesByDate(startDate: string, endDate: string) {
-        // Convertimos las strings a objetos Date para el filtro
         const start = new Date(startDate);
         const end = new Date(endDate);
 
         return this.postModel.aggregate([
-        // Filtramos por fecha de creación del post
-        { $match: { createdAt: { $gte: start, $lte: end } } },
-        {
-            $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            totalLikes: { $sum: '$likes' },
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+                    totalLikes: { $sum: '$likes' },
+                },
             },
-        },
-        { $sort: { _id: 1 } },
+            { $sort: { _id: 1 } },
         ]).exec();
     }
 
@@ -50,19 +53,19 @@ export class StatsService {
         const end = new Date(endDate);
 
         return this.postModel.aggregate([
-        // Desempaquetamos los comentarios para poder filtrarlos individualmente
-        { $unwind: '$comentarios' },
-        // Filtramos por fecha de creación del comentario
-        { 
-            $match: { 'comentarios.fecha': { $gte: start, $lte: end } } 
-        },
-        { 
-            $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$comentarios.fecha' } },
-            totalComments: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } }
+            { $unwind: '$comentarios' },
+            { 
+                $match: { 
+                    'comentarios.fecha': { $gte: start, $lte: end } 
+                } 
+            },
+            { 
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$comentarios.fecha' } },
+                    totalComments: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
         ]).exec();
     }
 
@@ -72,10 +75,8 @@ export class StatsService {
         const end = new Date(endDate);
         
         return this.postModel.aggregate([
-            // Filtramos posts creados en el rango
             { $match: { createdAt: { $gte: start, $lte: end } } },
             { $unwind: '$comentarios' },
-            // Agrupamos por el ID del post y contamos los comentarios
             { $group: {
                 _id: '$_id',
                 titulo: { $first: '$titulo' },

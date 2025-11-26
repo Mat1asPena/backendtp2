@@ -13,7 +13,7 @@ export class StatsController {
         }
     }
 
-    // Rutas con rangos de tiempo opcionales (por defecto, los últimos 30 días)
+    // Rutinas para generar fechas por defecto si no vienen en el query
     private getDefaultDates(days = 30) {
         const today = new Date();
         const ago = new Date(today);
@@ -24,11 +24,16 @@ export class StatsController {
         };
     }
 
-    // 1. Posts por usuario (no necesita fecha, es histórico)
+    // 1. Posts por usuario (Ahora acepta filtro de tiempo)
     @Get('posts-per-user')
-    async getPostsPerUser(@Req() req) {
+    async getPostsPerUser(
+        @Req() req,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+    ) {
         this.checkAdmin(req.user);
-        return this.statsService.getPostsPerUser();
+        const { startDate: defStart, endDate: defEnd } = this.getDefaultDates(30);
+        return this.statsService.getPostsPerUser(startDate || defStart, endDate || defEnd);
     }
 
     // 2. Likes por fecha
@@ -63,7 +68,7 @@ export class StatsController {
         @Query('endDate') endDate?: string,
     ) {
         this.checkAdmin(req.user);
-        const { startDate: defStart, endDate: defEnd } = this.getDefaultDates(90); // 90 días por defecto
+        const { startDate: defStart, endDate: defEnd } = this.getDefaultDates(90);
         return this.statsService.getCommentsPerPost(startDate || defStart, endDate || defEnd);
     }
 
